@@ -1,5 +1,5 @@
 # 4-Legendrian-Racks
-Programs for classifying 4-Legendrian racks up to isomorphism. Data for those up to order 6.
+Program for classifying 4-Legendrian racks up to isomorphism. Data for those up to order 6.
 
 Based on the rack library of Petr Vojtěchovský and Seung Yeop Yang (https://www.cs.du.edu/~petr/libraries_of_algebraic_structures.html)
 
