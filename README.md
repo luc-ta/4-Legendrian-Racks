@@ -12,3 +12,5 @@ for n in [1..3] do
 	ReadAsFunction(Concatenation(LRQ.path, "4-legendrian_finder.txt"))()(n);
 od;
 ```
+## Note
+In the program and data, 4-Legendrian racks are stored as lists of the form (R, uL, uR, dR, dL), where R is the underlying rack. This ordering is distinct from the usual ordering.
