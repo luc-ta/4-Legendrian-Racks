@@ -1,0 +1,130 @@
+return function(n) # n = order of rack
+local isRackAutomorphism, isGLStructure, isQuandle, isInvolutory, checkQuandle, checkInvolutory, rackCounts, Sn, isoClasses, nonisomorphicRacks, i, R, notHomsOfR, underlyingCount, u, valid, j, seen, homFound, phi, l, theta, thetaPerm, 4LegRack, uL, uR, uL2, uR2, isoClassesQnds, isoClassesInvRacks, isoClassesKei;
+
+# preliminary functions
+isRackAutomorphism := function(R,u) # R is a rack; u is a permutation of R
+	for j in [1..Length(R)] do 
+		if u*R[j^u] <> R[j]*u then return false; fi;
+	od;
+	return true;
+end;
+
+isGLStructure := function(R,u) # R is a rack; u is a permutation of R
+	# Does u centralize Inn(R)?
+	for j in [1..Length(R)] do
+		if u*R[j] <> R[j]*u then return false; fi;
+	od;
+	return isRackAutomorphism(R,u);
+end;
+
+isQuandle := function(R) # R is a rack
+	for j in [1..Length(R)] do
+		if j <> j^R[j] then return false; fi;
+	od;
+	return true;
+end;
+
+isInvolutory := function(R) # R is a rack
+	for j in [1..Length(R)] do
+		if R[j]^2 <> () then return false; fi;
+	od;
+	return true;
+end;
+
+# rackCounts[i] = number of isomorphism classes of racks of order i, where i > 0
+rackCounts:=[1, 2, 6, 19, 74, 353, 2080, 16023, 159526, 2093244, 36265070];
+
+# OEIS sequence A110143 is the number of isomorphism classes of 4-Legendrian racks whose underlying rack is the trivial quandle of order n
+A110143 := [1, 4, 11, 43, 161, 901, 5579, 43206, 378360, 3742738, 40853520];
+
+# main routine
+Sn := SymmetricGroup(n);
+isoClasses := [];
+isoClassesQnds := [];
+isoClassesInvRacks := [];
+isoClassesKei := [];
+nonisomorphicRacks := 1;
+PrintTo(Concatenation(GLR.path, "4-Legendrian_racks_of_order_", String(n), ".txt"), "return [ ");
+PrintTo(Concatenation(GLR.path, "4-Legendrian_quandles_of_order_", String(n), ".txt"), "return [ ");
+PrintTo(Concatenation(GLR.path, "4-Legendrian_kei_of_order_", String(n), ".txt"), "return [ ");
+PrintTo(Concatenation(GLR.path, "4-Legendrian_involutory_racks_of_order_", String(n), ".txt"), "return [ ");
+
+for i in [1..rackCounts[n]] do # test for valid GL-structures (u,d) on R
+	R := LRQ.Rack(n,i);
+	if n = 2 and i = 1 then
+		R:=[(),()]; # in the rack library, LRQ.Rack(2,1) is stored as [()], for whatever reason
+	fi;
+	checkQuandle := isQuandle(R);
+	checkInvolutory := isInvolutory(R);
+	notHomsOfR := [];
+	underlyingCount := 0;
+	
+	Print("Searching for 4-Legendrian structures on rack ",String(i)," of ",String(rackCounts[n]),"...\n");
+	for uL in Sn do
+		if i = 1 and Length(isoClasses) = A110143[n] then break; fi; # shaves off some time if R is a trivial rack
+		if not isGLStructure(R,uL) then continue; fi;
+		for uR in Sn do
+			if i = 1 and Length(isoClasses) = A110143[n] then break; fi; # shaves off some time if R is a trivial rack
+			if not isGLStructure(R,uR) then continue; fi;
+			
+			# if you've gotten to this point, then (R,uL,uR) is a 4-Legendrian rack, so it's time to check whether it's isomorphic to one we've already seen
+			seen := false;
+			if underlyingCount <> 0 then
+				for j in [nonisomorphicRacks..Length(isoClasses)] do # suffices since a 4-Legendrian rack isomorphism is also an isomorphism of the underlying racks
+					uL2 := isoClasses[j][2];
+					uR2 := isoClasses[j][3];
+					# for efficiency, first verify a necessary condition for a GL-rack isomorphism to exist
+					if not uL2 in ConjugacyClass(Sn, uL) then continue; fi;
+					if not uR2 in ConjugacyClass(Sn, uR) then continue; fi;
+					# search for a 4-Legendrian rack isomorphism; note that function composition is left to right in GAP
+					# let phi be a conjugator of uL and uL2 as well as uR and uR2
+					for phi in Intersection(AsList(RightCoset(Centralizer(Sn,uL),RepresentativeAction(Sn,uL,uL2))), AsList(RightCoset(Centralizer(Sn,uR),RepresentativeAction(Sn,uR,uR2)))) do 
+						homFound := true;
+						# Have we already seen that phi isn't in Aut(R)?
+						if phi in notHomsOfR then continue; fi;
+						homFound := isRackAutomorphism(R,phi);
+						if homFound = true then seen := true; break;
+						else Add(notHomsOfR,phi); fi;
+					od;
+					if seen = true then
+						break;
+					fi;
+				od;
+			fi;
+			
+			if seen = false then
+				# found a brand-new 4-Legendrian rack
+				underlyingCount := underlyingCount + 1;
+				theta := x -> x^R[x];
+				thetaPerm := PermList( List([1..n], theta) );
+				4LegRack := [R,uL,uR,Inverse(thetaPerm)*Inverse(uL),Inverse(thetaPerm)*Inverse(uR)];
+				Add(isoClasses,4LegRack);
+				AppendTo (Concatenation(GLR.path, "4-Legendrian_racks_of_order_", String(n), ".txt"), Concatenation(String(4LegRack),",\n"));
+				if checkQuandle then
+					Add(isoClassesQnds,4LegRack);
+					AppendTo (Concatenation(GLR.path, "4-Legendrian_quandles_of_order_", String(n), ".txt"), Concatenation(String(4LegRack),",\n"));
+					if checkInvolutory then
+						Add(isoClassesKei,4LegRack);
+						AppendTo (Concatenation(GLR.path, "4-Legendrian_kei_of_order_", String(n), ".txt"), Concatenation(String(4LegRack),",\n"));
+					fi;
+				fi;
+				if checkInvolutory then
+					Add(isoClassesInvRacks,4LegRack);
+					AppendTo (Concatenation(GLR.path, "4-Legendrian_involutory_racks_of_order_", String(n), ".txt"), Concatenation(String(4LegRack),",\n"));
+				fi;
+			fi;
+		od;
+	od;
+	nonisomorphicRacks := nonisomorphicRacks + underlyingCount;
+od;
+
+AppendTo (Concatenation(GLR.path, "4-Legendrian_racks_of_order_", String(n), ".txt")," ];\n # Number of isomorphism classes: ", String(Length(isoClasses)));
+AppendTo (Concatenation(GLR.path, "4-Legendrian_quandles_of_order_", String(n), ".txt")," ];\n # Number of isomorphism classes: ", String(Length(isoClassesQnds)));
+AppendTo (Concatenation(GLR.path, "4-Legendrian_kei_of_order_", String(n), ".txt")," ];\n # Number of isomorphism classes: ", String(Length(isoClassesKei)));
+AppendTo (Concatenation(GLR.path, "4-Legendrian_involutory_racks_of_order_", String(n), ".txt")," ];\n # Number of isomorphism classes: ", String(Length(isoClassesInvRacks)));
+Print(Concatenation("Printed results to ", GLR.path, "4-Legendrian_racks_of_order_", String(n), ".txt\n"));
+Print("Number of 4-Legendrian racks of order ",String(n),": ",String(Length(isoClasses)),"\n");
+Print("Number of 4-Legendrian quandles of order ",String(n),": ",String(Length(isoClassesQnds)),"\n");
+Print("Number of 4-Legendrian kei of order ",String(n),": ",String(Length(isoClassesKei)),"\n");
+Print("Number of 4-Legendrian involutory racks of order ",String(n),": ",String(Length(isoClassesInvRacks)),"\n");
+end;
