@@ -1,7 +1,9 @@
 # 4-Legendrian-Racks
 Program for classifying 4-Legendrian racks up to isomorphism. Data for those up to order 6.
 
-Based on the rack library of Petr Vojtěchovský and Seung Yeop Yang (https://www.cs.du.edu/~petr/libraries_of_algebraic_structures.html)
+Based on the [online rack library](https://www.cs.du.edu/~petr/libraries_of_algebraic_structures.html) of Petr Vojtěchovský and Seung Yeop Yang.
+
+This repo accompanies the papet ["Distinguishing power of 4-Legendrian permutation racks"](https://arxiv.org/abs/2510.26619) (arXiv:2510.26619), which is joint work with Peyton Phinehas Wood.
 
 # Usage
 `4-legendrian-finder.txt` exhaustively searches for 4-Legendrian structures on all racks of a given order _n_ in Vojtěchovský and Yang's library, searches for isomorphisms between them, and outputs a list of all 4-Legendrian racks of order _n_ up to isomorphism.
